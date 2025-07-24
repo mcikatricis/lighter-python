@@ -29,8 +29,9 @@ class AccountLimits(BaseModel):
     code: StrictInt
     message: Optional[StrictStr] = None
     max_llp_percentage: StrictInt
+    user_tier: StrictStr
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["code", "message", "max_llp_percentage"]
+    __properties: ClassVar[List[str]] = ["code", "message", "max_llp_percentage", "user_tier"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -92,7 +93,8 @@ class AccountLimits(BaseModel):
         _obj = cls.model_validate({
             "code": obj.get("code"),
             "message": obj.get("message"),
-            "max_llp_percentage": obj.get("max_llp_percentage")
+            "max_llp_percentage": obj.get("max_llp_percentage"),
+            "user_tier": obj.get("user_tier")
         })
         # store additional fields in additional_properties
         for _key in obj.keys():

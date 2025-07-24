@@ -38,8 +38,8 @@ class ReqGetFundings(BaseModel):
     @field_validator('resolution')
     def resolution_validate_enum(cls, value):
         """Validates the enum"""
-        if value not in set(['1h']):
-            raise ValueError("must be one of enum values ('1h')")
+        if value not in set(['1h', '1d']):
+            raise ValueError("must be one of enum values ('1h', '1d')")
         return value
 
     model_config = ConfigDict(

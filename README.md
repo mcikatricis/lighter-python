@@ -81,7 +81,6 @@ Class | Method | HTTP request | Description
 *CandlestickApi* | [**candlesticks**](docs/CandlestickApi.md#candlesticks) | **GET** /api/v1/candlesticks | candlesticks
 *CandlestickApi* | [**fundings**](docs/CandlestickApi.md#fundings) | **GET** /api/v1/fundings | fundings
 *InfoApi* | [**layer2_basic_info**](docs/InfoApi.md#layer2_basic_info) | **GET** /api/v1/layer2BasicInfo | layer2BasicInfo
-*OrderApi* | [**account_active_orders**](docs/OrderApi.md#account_active_orders) | **GET** /api/v1/accountActiveOrders | accountActiveOrders
 *OrderApi* | [**account_inactive_orders**](docs/OrderApi.md#account_inactive_orders) | **GET** /api/v1/accountInactiveOrders | accountInactiveOrders
 *OrderApi* | [**account_orders**](docs/OrderApi.md#account_orders) | **GET** /api/v1/accountOrders | accountOrders
 *OrderApi* | [**exchange_stats**](docs/OrderApi.md#exchange_stats) | **GET** /api/v1/exchangeStats | exchangeStats
@@ -158,7 +157,6 @@ Class | Method | HTTP request | Description
  - [PublicPoolShare](docs/PublicPoolShare.md)
  - [PublicPools](docs/PublicPools.md)
  - [ReqGetAccount](docs/ReqGetAccount.md)
- - [ReqGetAccountActiveOrders](docs/ReqGetAccountActiveOrders.md)
  - [ReqGetAccountApiKeys](docs/ReqGetAccountApiKeys.md)
  - [ReqGetAccountByL1Address](docs/ReqGetAccountByL1Address.md)
  - [ReqGetAccountInactiveOrders](docs/ReqGetAccountInactiveOrders.md)

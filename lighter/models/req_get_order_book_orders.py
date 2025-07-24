@@ -17,32 +17,20 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional
+from pydantic import BaseModel, ConfigDict, Field, StrictInt
+from typing import Any, ClassVar, Dict, List
+from typing_extensions import Annotated
 from typing import Optional, Set
 from typing_extensions import Self
 
-class AccountPosition(BaseModel):
+class ReqGetOrderBookOrders(BaseModel):
     """
-    AccountPosition
+    ReqGetOrderBookOrders
     """ # noqa: E501
     market_id: StrictInt
-    symbol: StrictStr
-    initial_margin_fraction: StrictStr
-    open_order_count: StrictInt
-    pending_order_count: StrictInt
-    position_tied_order_count: StrictInt
-    sign: StrictInt
-    position: StrictStr
-    avg_entry_price: StrictStr
-    position_value: StrictStr
-    unrealized_pnl: StrictStr
-    realized_pnl: StrictStr
-    total_funding_paid_out: Optional[StrictStr] = None
-    margin_mode: StrictInt
-    allocated_margin: StrictStr
+    limit: Annotated[int, Field(le=100, strict=True, ge=1)]
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["market_id", "symbol", "initial_margin_fraction", "open_order_count", "pending_order_count", "position_tied_order_count", "sign", "position", "avg_entry_price", "position_value", "unrealized_pnl", "realized_pnl", "total_funding_paid_out", "margin_mode", "allocated_margin"]
+    __properties: ClassVar[List[str]] = ["market_id", "limit"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -62,7 +50,7 @@ class AccountPosition(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of AccountPosition from a JSON string"""
+        """Create an instance of ReqGetOrderBookOrders from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -94,7 +82,7 @@ class AccountPosition(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of AccountPosition from a dict"""
+        """Create an instance of ReqGetOrderBookOrders from a dict"""
         if obj is None:
             return None
 
@@ -103,20 +91,7 @@ class AccountPosition(BaseModel):
 
         _obj = cls.model_validate({
             "market_id": obj.get("market_id"),
-            "symbol": obj.get("symbol"),
-            "initial_margin_fraction": obj.get("initial_margin_fraction"),
-            "open_order_count": obj.get("open_order_count"),
-            "pending_order_count": obj.get("pending_order_count"),
-            "position_tied_order_count": obj.get("position_tied_order_count"),
-            "sign": obj.get("sign"),
-            "position": obj.get("position"),
-            "avg_entry_price": obj.get("avg_entry_price"),
-            "position_value": obj.get("position_value"),
-            "unrealized_pnl": obj.get("unrealized_pnl"),
-            "realized_pnl": obj.get("realized_pnl"),
-            "total_funding_paid_out": obj.get("total_funding_paid_out"),
-            "margin_mode": obj.get("margin_mode"),
-            "allocated_margin": obj.get("allocated_margin")
+            "limit": obj.get("limit")
         })
         # store additional fields in additional_properties
         for _key in obj.keys():

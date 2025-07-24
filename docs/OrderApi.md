@@ -8,6 +8,7 @@ Method | HTTP request | Description
 [**exchange_stats**](OrderApi.md#exchange_stats) | **GET** /api/v1/exchangeStats | exchangeStats
 [**export**](OrderApi.md#export) | **GET** /api/v1/export | export
 [**order_book_details**](OrderApi.md#order_book_details) | **GET** /api/v1/orderBookDetails | orderBookDetails
+[**order_book_orders**](OrderApi.md#order_book_orders) | **GET** /api/v1/orderBookOrders | orderBookOrders
 [**order_books**](OrderApi.md#order_books) | **GET** /api/v1/orderBooks | orderBooks
 [**recent_trades**](OrderApi.md#recent_trades) | **GET** /api/v1/recentTrades | recentTrades
 [**trades**](OrderApi.md#trades) | **GET** /api/v1/trades | trades
@@ -288,6 +289,77 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**OrderBookDetails**](OrderBookDetails.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | A successful response. |  -  |
+**400** | Bad request |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **order_book_orders**
+> OrderBookOrders order_book_orders(market_id, limit)
+
+orderBookOrders
+
+Get order book orders
+
+### Example
+
+
+```python
+import lighter
+from lighter.models.order_book_orders import OrderBookOrders
+from lighter.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://mainnet.zklighter.elliot.ai
+# See configuration.py for a list of all supported configuration parameters.
+configuration = lighter.Configuration(
+    host = "https://mainnet.zklighter.elliot.ai"
+)
+
+
+# Enter a context with an instance of the API client
+async with lighter.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = lighter.OrderApi(api_client)
+    market_id = 56 # int | 
+    limit = 56 # int | 
+
+    try:
+        # orderBookOrders
+        api_response = await api_instance.order_book_orders(market_id, limit)
+        print("The response of OrderApi->order_book_orders:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling OrderApi->order_book_orders: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **market_id** | **int**|  | 
+ **limit** | **int**|  | 
+
+### Return type
+
+[**OrderBookOrders**](OrderBookOrders.md)
 
 ### Authorization
 

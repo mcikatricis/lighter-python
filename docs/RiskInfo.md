@@ -5,11 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**collateral** | **str** |  | 
-**total_account_value** | **str** |  | 
-**initial_margin_req** | **str** |  | 
-**maintenance_margin_req** | **str** |  | 
-**close_out_margin_req** | **str** |  | 
+**cross_risk_parameters** | [**RiskParameters**](RiskParameters.md) |  | 
+**isolated_risk_parameters** | [**List[RiskParameters]**](RiskParameters.md) |  | 
 
 ## Example
 

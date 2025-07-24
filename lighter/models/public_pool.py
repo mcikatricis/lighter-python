@@ -35,6 +35,7 @@ class PublicPool(BaseModel):
     l1_address: StrictStr
     cancel_all_time: StrictInt
     total_order_count: StrictInt
+    total_isolated_order_count: StrictInt
     pending_order_count: StrictInt
     status: StrictInt
     collateral: StrictStr
@@ -44,10 +45,11 @@ class PublicPool(BaseModel):
     can_invite: StrictBool = Field(description=" Remove After FE uses L1 meta endpoint")
     referral_points_percentage: StrictStr = Field(description=" Remove After FE uses L1 meta endpoint")
     total_asset_value: StrictStr
+    cross_asset_value: StrictStr
     pool_info: PublicPoolInfo
     account_share: Optional[PublicPoolShare] = None
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["code", "message", "account_type", "index", "l1_address", "cancel_all_time", "total_order_count", "pending_order_count", "status", "collateral", "account_index", "name", "description", "can_invite", "referral_points_percentage", "total_asset_value", "pool_info", "account_share"]
+    __properties: ClassVar[List[str]] = ["code", "message", "account_type", "index", "l1_address", "cancel_all_time", "total_order_count", "total_isolated_order_count", "pending_order_count", "status", "collateral", "account_index", "name", "description", "can_invite", "referral_points_percentage", "total_asset_value", "cross_asset_value", "pool_info", "account_share"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -120,6 +122,7 @@ class PublicPool(BaseModel):
             "l1_address": obj.get("l1_address"),
             "cancel_all_time": obj.get("cancel_all_time"),
             "total_order_count": obj.get("total_order_count"),
+            "total_isolated_order_count": obj.get("total_isolated_order_count"),
             "pending_order_count": obj.get("pending_order_count"),
             "status": obj.get("status"),
             "collateral": obj.get("collateral"),
@@ -129,6 +132,7 @@ class PublicPool(BaseModel):
             "can_invite": obj.get("can_invite"),
             "referral_points_percentage": obj.get("referral_points_percentage"),
             "total_asset_value": obj.get("total_asset_value"),
+            "cross_asset_value": obj.get("cross_asset_value"),
             "pool_info": PublicPoolInfo.from_dict(obj["pool_info"]) if obj.get("pool_info") is not None else None,
             "account_share": PublicPoolShare.from_dict(obj["account_share"]) if obj.get("account_share") is not None else None
         })

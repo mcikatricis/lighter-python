@@ -12,6 +12,7 @@ Name | Type | Description | Notes
 **l1_address** | **str** |  | 
 **cancel_all_time** | **int** |  | 
 **total_order_count** | **int** |  | 
+**total_isolated_order_count** | **int** |  | 
 **pending_order_count** | **int** |  | 
 **status** | **int** |  | 
 **collateral** | **str** |  | 
@@ -21,6 +22,7 @@ Name | Type | Description | Notes
 **can_invite** | **bool** |  Remove After FE uses L1 meta endpoint | 
 **referral_points_percentage** | **str** |  Remove After FE uses L1 meta endpoint | 
 **total_asset_value** | **str** |  | 
+**cross_asset_value** | **str** |  | 
 **pool_info** | [**PublicPoolInfo**](PublicPoolInfo.md) |  | 
 **account_share** | [**PublicPoolShare**](PublicPoolShare.md) |  | [optional] 
 

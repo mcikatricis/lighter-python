@@ -17,8 +17,9 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictStr
+from pydantic import BaseModel, ConfigDict
 from typing import Any, ClassVar, Dict, List
+from lighter.models.risk_parameters import RiskParameters
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -26,13 +27,10 @@ class RiskInfo(BaseModel):
     """
     RiskInfo
     """ # noqa: E501
-    collateral: StrictStr
-    total_account_value: StrictStr
-    initial_margin_req: StrictStr
-    maintenance_margin_req: StrictStr
-    close_out_margin_req: StrictStr
+    cross_risk_parameters: RiskParameters
+    isolated_risk_parameters: List[RiskParameters]
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["collateral", "total_account_value", "initial_margin_req", "maintenance_margin_req", "close_out_margin_req"]
+    __properties: ClassVar[List[str]] = ["cross_risk_parameters", "isolated_risk_parameters"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -75,6 +73,16 @@ class RiskInfo(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of cross_risk_parameters
+        if self.cross_risk_parameters:
+            _dict['cross_risk_parameters'] = self.cross_risk_parameters.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of each item in isolated_risk_parameters (list)
+        _items = []
+        if self.isolated_risk_parameters:
+            for _item in self.isolated_risk_parameters:
+                if _item:
+                    _items.append(_item.to_dict())
+            _dict['isolated_risk_parameters'] = _items
         # puts key-value pairs in additional_properties in the top level
         if self.additional_properties is not None:
             for _key, _value in self.additional_properties.items():
@@ -92,11 +100,8 @@ class RiskInfo(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "collateral": obj.get("collateral"),
-            "total_account_value": obj.get("total_account_value"),
-            "initial_margin_req": obj.get("initial_margin_req"),
-            "maintenance_margin_req": obj.get("maintenance_margin_req"),
-            "close_out_margin_req": obj.get("close_out_margin_req")
+            "cross_risk_parameters": RiskParameters.from_dict(obj["cross_risk_parameters"]) if obj.get("cross_risk_parameters") is not None else None,
+            "isolated_risk_parameters": [RiskParameters.from_dict(_item) for _item in obj["isolated_risk_parameters"]] if obj.get("isolated_risk_parameters") is not None else None
         })
         # store additional fields in additional_properties
         for _key in obj.keys():

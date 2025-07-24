@@ -9,6 +9,7 @@ Method | HTTP request | Description
 [**account_metadata**](AccountApi.md#account_metadata) | **GET** /api/v1/accountMetadata | accountMetadata
 [**accounts_by_l1_address**](AccountApi.md#accounts_by_l1_address) | **GET** /api/v1/accountsByL1Address | accountsByL1Address
 [**apikeys**](AccountApi.md#apikeys) | **GET** /api/v1/apikeys | apikeys
+[**change_account_tier**](AccountApi.md#change_account_tier) | **POST** /api/v1/changeAccountTier | changeAccountTier
 [**l1_metadata**](AccountApi.md#l1_metadata) | **GET** /api/v1/l1Metadata | l1Metadata
 [**liquidations**](AccountApi.md#liquidations) | **GET** /api/v1/liquidations | liquidations
 [**pnl**](AccountApi.md#pnl) | **GET** /api/v1/pnl | pnl
@@ -364,6 +365,81 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | A successful response. |  -  |
+**400** | Bad request |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **change_account_tier**
+> RespChangeAccountTier change_account_tier(account_index, new_tier, authorization=authorization, auth=auth)
+
+changeAccountTier
+
+Change account tier
+
+### Example
+
+
+```python
+import lighter
+from lighter.models.resp_change_account_tier import RespChangeAccountTier
+from lighter.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to https://mainnet.zklighter.elliot.ai
+# See configuration.py for a list of all supported configuration parameters.
+configuration = lighter.Configuration(
+    host = "https://mainnet.zklighter.elliot.ai"
+)
+
+
+# Enter a context with an instance of the API client
+async with lighter.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = lighter.AccountApi(api_client)
+    account_index = 56 # int | 
+    new_tier = 'new_tier_example' # str | 
+    authorization = 'authorization_example' # str |  make required after integ is done (optional)
+    auth = 'auth_example' # str |  made optional to support header auth clients (optional)
+
+    try:
+        # changeAccountTier
+        api_response = await api_instance.change_account_tier(account_index, new_tier, authorization=authorization, auth=auth)
+        print("The response of AccountApi->change_account_tier:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling AccountApi->change_account_tier: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **account_index** | **int**|  | 
+ **new_tier** | **str**|  | 
+ **authorization** | **str**|  make required after integ is done | [optional] 
+ **auth** | **str**|  made optional to support header auth clients | [optional] 
+
+### Return type
+
+[**RespChangeAccountTier**](RespChangeAccountTier.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: multipart/form-data
  - **Accept**: application/json
 
 ### HTTP response details

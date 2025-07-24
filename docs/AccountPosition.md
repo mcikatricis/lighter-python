@@ -18,6 +18,8 @@ Name | Type | Description | Notes
 **unrealized_pnl** | **str** |  | 
 **realized_pnl** | **str** |  | 
 **total_funding_paid_out** | **str** |  | [optional] 
+**margin_mode** | **int** |  | 
+**allocated_margin** | **str** |  | 
 
 ## Example
 
