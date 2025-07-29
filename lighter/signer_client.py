@@ -1,19 +1,26 @@
 import ctypes
+from functools import wraps
+import inspect
 import json
 import platform
 import logging
 import os
 import time
+from typing import Dict, Optional, Tuple
 
 from eth_account import Account
 from eth_account.messages import encode_defunct
 from pydantic import StrictInt
 import lighter
 from lighter.configuration import Configuration
+from lighter.errors import ValidationError
 from lighter.models import TxHash
+from lighter import nonce_manager
 from lighter.transactions import CreateOrder, CancelOrder, Withdraw
 
 logging.basicConfig(level=logging.DEBUG)
+
+CODE_OK = 200
 
 
 class ApiKeyResponse(ctypes.Structure):
@@ -60,6 +67,47 @@ def create_api_key(seed=""):
     return private_key_str, public_key_str, error
 
 
+def trim_exc(exception_body: str):
+    return exception_body.strip().split("\n")[-1]
+
+
+def process_api_key_and_nonce(func):
+    @wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        # Get the signature
+        sig = inspect.signature(func)
+
+        # Bind args and kwargs to the function's signature
+        bound_args = sig.bind(self, *args, **kwargs)
+        bound_args.apply_defaults()
+        # Extract api_key_index and nonce from kwargs or use defaults
+        api_key_index = bound_args.arguments.get("api_key_index", -1)
+        nonce = bound_args.arguments.get("nonce", -1)
+        if api_key_index == -1 and nonce == -1:
+            api_key_index, nonce = self.nonce_manager.next_nonce()
+        err = self.switch_api_key(api_key_index)
+        if err != None:
+            raise Exception(f"error switching api key: {err}")
+
+        # Call the original function with modified kwargs
+        ret: TxHash
+        try:
+            created_tx, ret, err = await func(self, *args, **kwargs, nonce=nonce, api_key_index=api_key_index)
+            if ret.code != CODE_OK:
+                self.nonce_manager.acknowledge_failure(api_key_index)
+        except lighter.exceptions.BadRequestException as e:
+            if "invalid nonce" in str(e):
+                self.nonce_manager.hard_refresh_nonce(api_key_index)
+                return None, None, trim_exc(str(e))
+            else:
+                self.nonce_manager.acknowledge_failure(api_key_index)
+                return None, None, trim_exc(str(e))
+
+        return created_tx, ret, err
+
+    return wrapper
+
+
 class SignerClient:
     USDC_TICKER_SCALE = 1e6
 
@@ -88,13 +136,30 @@ class SignerClient:
     ORDER_TIME_IN_FORCE_GOOD_TILL_TIME = 1
     ORDER_TIME_IN_FORCE_POST_ONLY = 2
 
+    CANCEL_ALL_TIF_IMMEDIATE = 0
+    CANCEL_ALL_TIF_SCHEDULED = 1
+    CANCEL_ALL_TIF_ABORT = 2
+
     NIL_TRIGGER_PRICE = 0
     DEFAULT_28_DAY_ORDER_EXPIRY = -1
     DEFAULT_IOC_EXPIRY = 0
     DEFAULT_10_MIN_AUTH_EXPIRY = -1
     MINUTE = 60
 
-    def __init__(self, url, private_key, api_key_index, account_index):
+    def __init__(
+        self,
+        url,
+        private_key,
+        api_key_index,
+        account_index,
+        max_api_key_index=-1,
+        private_keys: Optional[Dict[int, str]] = None,
+        nonce_management_type=nonce_manager.NonceManagerType.OPTIMISTIC,
+    ):
+        """
+        First private key needs to be passed separately for backwards compatibility.
+        This may get deprecated in a future version.
+        """
         chain_id = 304 if "mainnet" in url else 300
 
         # api_key_index=0 is generally used by frontend
@@ -104,13 +169,45 @@ class SignerClient:
         self.private_key = private_key
         self.chain_id = chain_id
         self.api_key_index = api_key_index
+        if max_api_key_index == -1:
+            self.end_api_key_index = api_key_index
+        else:
+            self.end_api_key_index = max_api_key_index
+
+        private_keys = private_keys or {}
+        self.validate_api_private_keys(private_key, private_keys)
+        self.api_key_dict = self.build_api_key_dict(private_key, private_keys)
         self.account_index = account_index
         self.signer = _initialize_signer()
         self.api_client = lighter.ApiClient(configuration=Configuration(host=url))
         self.tx_api = lighter.TransactionApi(self.api_client)
-        self.create_client()
+        self.nonce_manager = nonce_manager.nonce_manager_factory(
+            nonce_manager_type=nonce_management_type,
+            account_index=account_index,
+            api_client=self.api_client,
+            start_api_key=self.api_key_index,
+            end_api_key=self.end_api_key_index,
+        )
+        for api_key in range(self.api_key_index, self.end_api_key_index + 1):
+            self.create_client(api_key)
 
-    def create_client(self):
+    def validate_api_private_keys(self, initial_private_key: str, private_keys: Dict[int, str]):
+        if len(private_keys) == self.end_api_key_index - self.api_key_index + 1:
+            if private_keys[self.api_key_index] != initial_private_key:
+                raise ValidationError("inconsistent private keys")
+            return  # this is all we need to check in this case
+        if len(private_keys) != self.end_api_key_index - self.api_key_index:
+            raise ValidationError("unexpected number of private keys")
+        for api_key in range(self.api_key_index + 1, self.end_api_key_index):
+            if api_key not in private_keys:
+                raise Exception(f"missing {api_key=} private key!")
+
+    def build_api_key_dict(self, private_key, private_keys):
+        if len(private_keys) == self.end_api_key_index - self.api_key_index:
+            private_keys[self.api_key_index] = private_key
+        return private_keys
+
+    def create_client(self, api_key_index=None):
         self.signer.CreateClient.argtypes = [
             ctypes.c_char_p,
             ctypes.c_char_p,
@@ -118,12 +215,13 @@ class SignerClient:
             ctypes.c_int,
             ctypes.c_longlong,
         ]
+        api_key_index = api_key_index or self.api_key_index
         self.signer.CreateClient.restype = ctypes.c_char_p
         err = self.signer.CreateClient(
             self.url.encode("utf-8"),
-            self.private_key.encode("utf-8"),
+            self.api_key_dict[api_key_index].encode("utf-8"),
             self.chain_id,
-            self.api_key_index,
+            api_key_index,
             self.account_index,
         )
 
@@ -141,7 +239,16 @@ class SignerClient:
         ]
         self.signer.CheckClient.restype = ctypes.c_char_p
 
-        result = self.signer.CheckClient(self.api_key_index, self.account_index)
+        for api_key in range(self.api_key_index, self.end_api_key_index + 1):
+            result = self.signer.CheckClient(api_key, self.account_index)
+            if result:
+                return result.decode("utf-8") + f" on api key {self.api_key_index}"
+        return result.decode("utf-8") if result else None
+
+    def switch_api_key(self, api_key: int):
+        self.signer.SwitchAPIKey.argtypes = [ctypes.c_int]
+        self.signer.CheckClient.restype = ctypes.c_char_p
+        result = self.signer.SwitchAPIKey(api_key)
         return result.decode("utf-8") if result else None
 
     def create_api_key(self, seed=""):
@@ -181,6 +288,16 @@ class SignerClient:
         signature = acct.sign_message(message)
         tx_info["L1Sig"] = signature.signature.to_0x_hex()
         return json.dumps(tx_info), None
+
+    def get_api_key_nonce(self, api_key_index: int, nonce: int) -> Tuple[int, int]:
+        if api_key_index != -1 and nonce != -1:
+            return api_key_index, nonce
+        if nonce != -1:
+            if self.api_key_index == self.end_api_key_index:
+                return self.nonce_manager.next_nonce()
+            else:
+                raise Exception("ambiguous api key")
+        return self.nonce_manager.next_nonce()
 
     def sign_create_order(
         self,
@@ -419,6 +536,7 @@ class SignerClient:
         logging.debug(f"Change Pub Key Send Tx Response: {api_response}")
         return api_response, None
 
+    @process_api_key_and_nonce
     async def create_order(
         self,
         market_index,
@@ -432,6 +550,7 @@ class SignerClient:
         trigger_price=NIL_TRIGGER_PRICE,
         order_expiry=-1,
         nonce=-1,
+        api_key_index=-1,
     ) -> (CreateOrder, TxHash, str):
         tx_info, error = self.sign_create_order(
             market_index,
@@ -455,7 +574,15 @@ class SignerClient:
         return CreateOrder.from_json(tx_info), api_response, None
 
     async def create_market_order(
-        self, market_index, client_order_index, base_amount, avg_execution_price, is_ask, reduce_only: bool = False
+        self,
+        market_index,
+        client_order_index,
+        base_amount,
+        avg_execution_price,
+        is_ask,
+        reduce_only: bool = False,
+        nonce=-1,
+        api_key_index=-1,
     ) -> (CreateOrder, TxHash, str):
         return await self.create_order(
             market_index,
@@ -467,9 +594,12 @@ class SignerClient:
             time_in_force=self.ORDER_TIME_IN_FORCE_IMMEDIATE_OR_CANCEL,
             order_expiry=self.DEFAULT_IOC_EXPIRY,
             reduce_only=reduce_only,
+            nonce=nonce,
+            api_key_index=api_key_index,
         )
 
-    async def cancel_order(self, market_index, order_index, nonce=-1) -> (CancelOrder, TxHash, str):
+    @process_api_key_and_nonce
+    async def cancel_order(self, market_index, order_index, nonce=-1, api_key_index=-1) -> (CancelOrder, TxHash, str):
         tx_info, error = self.sign_cancel_order(market_index, order_index, nonce)
         if error is not None:
             return None, None, error
@@ -479,7 +609,8 @@ class SignerClient:
         logging.debug(f"Cancel Order Send Tx Response: {api_response}")
         return CancelOrder.from_json(tx_info), api_response, None
 
-    async def withdraw(self, usdc_amount, nonce=-1) -> (Withdraw, TxHash):
+    @process_api_key_and_nonce
+    async def withdraw(self, usdc_amount, nonce=-1, api_key_index=-1) -> (Withdraw, TxHash):
         usdc_amount = int(usdc_amount * self.USDC_TICKER_SCALE)
 
         tx_info, error = self.sign_withdraw(usdc_amount, nonce)
@@ -499,9 +630,10 @@ class SignerClient:
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_CREATE_SUB_ACCOUNT, tx_info=tx_info)
         logging.debug(f"Create Sub Account Send Tx Response: {api_response}")
-        return api_response, None
+        return tx_info, api_response, None
 
-    async def cancel_all_orders(self, time_in_force, time, nonce=-1):
+    @process_api_key_and_nonce
+    async def cancel_all_orders(self, time_in_force, time, nonce=-1, api_key_index=-1):
         tx_info, error = self.sign_cancel_all_orders(time_in_force, time, nonce)
         if error is not None:
             return None, error
@@ -509,9 +641,12 @@ class SignerClient:
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_CANCEL_ALL_ORDERS, tx_info=tx_info)
         logging.debug(f"Cancel All Orders Send Tx Response: {api_response}")
-        return api_response, None
+        return tx_info, api_response, None
 
-    async def modify_order(self, market_index, order_index, base_amount, price, trigger_price, nonce=-1):
+    @process_api_key_and_nonce
+    async def modify_order(
+        self, market_index, order_index, base_amount, price, trigger_price, nonce=-1, api_key_index=-1
+    ):
         tx_info, error = self.sign_modify_order(market_index, order_index, base_amount, price, trigger_price, nonce)
         if error is not None:
             return None, error
@@ -521,7 +656,8 @@ class SignerClient:
         logging.debug(f"Modify Order Send Tx Response: {api_response}")
         return api_response, None
 
-    async def transfer(self, to_account_index, usdc_amount, nonce=-1):
+    @process_api_key_and_nonce
+    async def transfer(self, to_account_index, usdc_amount, nonce=-1, api_key_index=-1):
         usdc_amount = int(usdc_amount * self.USDC_TICKER_SCALE)
 
         tx_info, error = self.sign_transfer(to_account_index, usdc_amount, nonce)
@@ -533,7 +669,10 @@ class SignerClient:
         logging.debug(f"Transfer Send Tx Response: {api_response}")
         return api_response, None
 
-    async def create_public_pool(self, operator_fee, initial_total_shares, min_operator_share_rate, nonce=-1):
+    @process_api_key_and_nonce
+    async def create_public_pool(
+        self, operator_fee, initial_total_shares, min_operator_share_rate, nonce=-1, api_key_index=-1
+    ):
         tx_info, error = self.sign_create_public_pool(
             operator_fee, initial_total_shares, min_operator_share_rate, nonce
         )
@@ -545,7 +684,10 @@ class SignerClient:
         logging.debug(f"Create Public Pool Send Tx Response: {api_response}")
         return api_response, None
 
-    async def update_public_pool(self, public_pool_index, status, operator_fee, min_operator_share_rate, nonce=-1):
+    @process_api_key_and_nonce
+    async def update_public_pool(
+        self, public_pool_index, status, operator_fee, min_operator_share_rate, nonce=-1, api_key_index=-1
+    ):
         tx_info, error = self.sign_update_public_pool(
             public_pool_index, status, operator_fee, min_operator_share_rate, nonce
         )
@@ -557,7 +699,8 @@ class SignerClient:
         logging.debug(f"Update Public Pool Send Tx Response: {api_response}")
         return api_response, None
 
-    async def mint_shares(self, public_pool_index, share_amount, nonce=-1):
+    @process_api_key_and_nonce
+    async def mint_shares(self, public_pool_index, share_amount, nonce=-1, api_key_index=-1):
         tx_info, error = self.sign_mint_shares(public_pool_index, share_amount, nonce)
         if error is not None:
             return None, error
@@ -567,7 +710,8 @@ class SignerClient:
         logging.debug(f"Mint Shares Send Tx Response: {api_response}")
         return api_response, None
 
-    async def burn_shares(self, public_pool_index, share_amount, nonce=-1):
+    @process_api_key_and_nonce
+    async def burn_shares(self, public_pool_index, share_amount, nonce=-1, api_key_index=-1):
         tx_info, error = self.sign_burn_shares(public_pool_index, share_amount, nonce)
         if error is not None:
             return None, error
