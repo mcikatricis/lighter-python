@@ -6,6 +6,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # The API_KEY_PRIVATE_KEY provided belongs to a dummy account registered on Testnet.
 # It was generated using the setup_system.py script, and servers as an example.
+# Alternatively, you can go to https://app.lighter.xyz/apikeys for mainnet api keys
 BASE_URL = "https://testnet.zklighter.elliot.ai"
 API_KEY_PRIVATE_KEY = "0xed636277f3753b6c0275f7a28c2678a7f3a95655e09deaebec15179b50c5da7f903152e50f594f7b"
 ACCOUNT_INDEX = 65
@@ -36,7 +37,7 @@ async def main():
         market_index=0,
         client_order_index=123,
         base_amount=100000,
-        price=270000,
+        price=405000,
         is_ask=True,
         order_type=lighter.SignerClient.ORDER_TYPE_LIMIT,
         time_in_force=lighter.SignerClient.ORDER_TIME_IN_FORCE_GOOD_TILL_TIME,
