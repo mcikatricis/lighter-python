@@ -1,4 +1,3 @@
-# TODO: remove
 import asyncio
 import lighter
 
