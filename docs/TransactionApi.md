@@ -18,7 +18,7 @@ Method | HTTP request | Description
 
 
 # **account_txs**
-> Txs account_txs(limit, by, value, index=index, types=types)
+> Txs account_txs(limit, by, value, authorization=authorization, index=index, types=types, auth=auth)
 
 accountTxs
 
@@ -47,12 +47,14 @@ async with lighter.ApiClient(configuration) as api_client:
     limit = 56 # int | 
     by = 'by_example' # str | 
     value = 'value_example' # str | 
+    authorization = 'authorization_example' # str |  (optional)
     index = 56 # int |  (optional)
     types = [56] # List[int] |  (optional)
+    auth = 'auth_example' # str |  (optional)
 
     try:
         # accountTxs
-        api_response = await api_instance.account_txs(limit, by, value, index=index, types=types)
+        api_response = await api_instance.account_txs(limit, by, value, authorization=authorization, index=index, types=types, auth=auth)
         print("The response of TransactionApi->account_txs:\n")
         pprint(api_response)
     except Exception as e:
@@ -69,8 +71,10 @@ Name | Type | Description  | Notes
  **limit** | **int**|  | 
  **by** | **str**|  | 
  **value** | **str**|  | 
+ **authorization** | **str**|  | [optional] 
  **index** | **int**|  | [optional] 
  **types** | [**List[int]**](int.md)|  | [optional] 
+ **auth** | **str**|  | [optional] 
 
 ### Return type
 

@@ -83,7 +83,6 @@ from lighter.models.req_get_account_by_l1_address import ReqGetAccountByL1Addres
 from lighter.models.req_get_account_inactive_orders import ReqGetAccountInactiveOrders
 from lighter.models.req_get_account_limits import ReqGetAccountLimits
 from lighter.models.req_get_account_metadata import ReqGetAccountMetadata
-from lighter.models.req_get_account_pending_txs import ReqGetAccountPendingTxs
 from lighter.models.req_get_account_pn_l import ReqGetAccountPnL
 from lighter.models.req_get_account_txs import ReqGetAccountTxs
 from lighter.models.req_get_block import ReqGetBlock

@@ -77,7 +77,6 @@ docs/ReqGetAccountByL1Address.md
 docs/ReqGetAccountInactiveOrders.md
 docs/ReqGetAccountLimits.md
 docs/ReqGetAccountMetadata.md
-docs/ReqGetAccountPendingTxs.md
 docs/ReqGetAccountPnL.md
 docs/ReqGetAccountTxs.md
 docs/ReqGetBlock.md
@@ -223,7 +222,6 @@ lighter/models/req_get_account_by_l1_address.py
 lighter/models/req_get_account_inactive_orders.py
 lighter/models/req_get_account_limits.py
 lighter/models/req_get_account_metadata.py
-lighter/models/req_get_account_pending_txs.py
 lighter/models/req_get_account_pn_l.py
 lighter/models/req_get_account_txs.py
 lighter/models/req_get_block.py
@@ -283,18 +281,4 @@ lighter/rest.py
 setup.cfg
 test-requirements.txt
 test/__init__.py
-test/test_account_margin_stats.py
-test/test_info_api.py
-test/test_order_book_orders.py
-test/test_req_get_order_book_orders.py
-test/test_req_get_transfer_fee_info.py
-test/test_req_get_transfer_history.py
-test/test_resp_change_account_tier.py
-test/test_resp_send_tx.py
-test/test_resp_send_tx_batch.py
-test/test_resp_withdrawal_delay.py
-test/test_risk_parameters.py
-test/test_transfer_fee_info.py
-test/test_transfer_history.py
-test/test_transfer_history_item.py
 tox.ini

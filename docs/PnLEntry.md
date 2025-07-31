@@ -12,6 +12,7 @@ Name | Type | Description | Notes
 **pool_pnl** | **float** |  | 
 **pool_inflow** | **float** |  | 
 **pool_outflow** | **float** |  | 
+**pool_total_shares** | **float** |  | 
 
 ## Example
 

@@ -32,8 +32,9 @@ class ReqGetAccountTxs(BaseModel):
     by: Optional[StrictStr] = None
     value: Optional[StrictStr] = None
     types: Optional[List[StrictInt]] = None
+    auth: Optional[StrictStr] = None
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["index", "limit", "by", "value", "types"]
+    __properties: ClassVar[List[str]] = ["index", "limit", "by", "value", "types", "auth"]
 
     @field_validator('by')
     def by_validate_enum(cls, value):
@@ -107,7 +108,8 @@ class ReqGetAccountTxs(BaseModel):
             "limit": obj.get("limit"),
             "by": obj.get("by"),
             "value": obj.get("value"),
-            "types": obj.get("types")
+            "types": obj.get("types"),
+            "auth": obj.get("auth")
         })
         # store additional fields in additional_properties
         for _key in obj.keys():

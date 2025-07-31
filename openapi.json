@@ -298,6 +298,12 @@
         },
         "parameters": [
           {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "type": "string"
+          },
+          {
             "name": "index",
             "in": "query",
             "required": false,
@@ -337,6 +343,12 @@
               "type": "integer",
               "format": "uint8"
             }
+          },
+          {
+            "name": "auth",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -2305,6 +2317,10 @@
           "format": "int64",
           "example": "100"
         },
+        "available_balance": {
+          "type": "string",
+          "example": "19995"
+        },
         "status": {
           "type": "integer",
           "format": "uint8",
@@ -2325,6 +2341,7 @@
         "total_order_count",
         "total_isolated_order_count",
         "pending_order_count",
+        "available_balance",
         "status",
         "collateral"
       ]
@@ -3242,6 +3259,10 @@
           "format": "int64",
           "example": "100"
         },
+        "available_balance": {
+          "type": "string",
+          "example": "19995"
+        },
         "status": {
           "type": "integer",
           "format": "uint8",
@@ -3304,6 +3325,7 @@
         "total_order_count",
         "total_isolated_order_count",
         "pending_order_count",
+        "available_balance",
         "status",
         "collateral",
         "account_index",
@@ -4672,6 +4694,11 @@
           "type": "number",
           "format": "double",
           "example": "12.0"
+        },
+        "pool_total_shares": {
+          "type": "number",
+          "format": "double",
+          "example": "12.0"
         }
       },
       "title": "PnLEntry",
@@ -4682,7 +4709,8 @@
         "outflow",
         "pool_pnl",
         "pool_inflow",
-        "pool_outflow"
+        "pool_outflow",
+        "pool_total_shares"
       ]
     },
     "PositionFunding": {
@@ -4825,6 +4853,10 @@
           "format": "int64",
           "example": "100"
         },
+        "available_balance": {
+          "type": "string",
+          "example": "19995"
+        },
         "status": {
           "type": "integer",
           "format": "uint8",
@@ -4878,6 +4910,7 @@
         "total_order_count",
         "total_isolated_order_count",
         "pending_order_count",
+        "available_balance",
         "status",
         "collateral",
         "account_index",
@@ -5298,28 +5331,6 @@
         "value"
       ]
     },
-    "ReqGetAccountPendingTxs": {
-      "type": "object",
-      "properties": {
-        "by": {
-          "type": "string",
-          "enum": [
-            "account_index"
-          ]
-        },
-        "value": {
-          "type": "string"
-        },
-        "types": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "format": "uint8"
-          }
-        }
-      },
-      "title": "ReqGetAccountPendingTxs"
-    },
     "ReqGetAccountPnL": {
       "type": "object",
       "properties": {
@@ -5404,6 +5415,9 @@
             "type": "integer",
             "format": "uint8"
           }
+        },
+        "auth": {
+          "type": "string"
         }
       },
       "title": "ReqGetAccountTxs"

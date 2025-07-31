@@ -14,6 +14,7 @@ Name | Type | Description | Notes
 **total_order_count** | **int** |  | 
 **total_isolated_order_count** | **int** |  | 
 **pending_order_count** | **int** |  | 
+**available_balance** | **str** |  | 
 **status** | **int** |  | 
 **collateral** | **str** |  | 
 **account_index** | **int** |  | 
