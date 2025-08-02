@@ -38,7 +38,7 @@ class DetailedAccount(BaseModel):
     total_order_count: StrictInt
     total_isolated_order_count: StrictInt
     pending_order_count: StrictInt
-    available_balance: StrictStr
+    available_balance: Optional[StrictStr]
     status: StrictInt
     collateral: StrictStr
     account_index: StrictInt

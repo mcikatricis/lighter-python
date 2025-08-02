@@ -30,7 +30,7 @@ class AccountStats(BaseModel):
     collateral: StrictStr
     portfolio_value: StrictStr
     leverage: StrictStr
-    available_balance: StrictStr
+    available_balance: Optional[StrictStr]
     margin_usage: StrictStr
     buying_power: StrictStr
     cross_stats: AccountMarginStats
