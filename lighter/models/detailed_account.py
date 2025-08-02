@@ -49,7 +49,7 @@ class DetailedAccount(BaseModel):
     positions: List[AccountPosition]
     total_asset_value: StrictStr
     cross_asset_value: StrictStr
-    pool_info: PublicPoolInfo
+    pool_info: Optional[PublicPoolInfo]
     shares: List[PublicPoolShare]
     additional_properties: Dict[str, Any] = {}
     __properties: ClassVar[List[str]] = ["code", "message", "account_type", "index", "l1_address", "cancel_all_time", "total_order_count", "total_isolated_order_count", "pending_order_count", "available_balance", "status", "collateral", "account_index", "name", "description", "can_invite", "referral_points_percentage", "positions", "total_asset_value", "cross_asset_value", "pool_info", "shares"]
