@@ -16,6 +16,7 @@ from lighter.configuration import Configuration
 from lighter.errors import ValidationError
 from lighter.models import TxHash
 from lighter import nonce_manager
+from lighter.models.resp_send_tx import RespSendTx
 from lighter.transactions import CreateOrder, CancelOrder, Withdraw
 
 logging.basicConfig(level=logging.DEBUG)
@@ -658,7 +659,7 @@ class SignerClient:
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_MODIFY_ORDER, tx_info=tx_info)
         logging.debug(f"Modify Order Send Tx Response: {api_response}")
-        return api_response, None
+        return tx_info, api_response, None
 
     @process_api_key_and_nonce
     async def transfer(self, to_account_index, usdc_amount, nonce=-1, api_key_index=-1):
@@ -671,7 +672,7 @@ class SignerClient:
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_TRANSFER, tx_info=tx_info)
         logging.debug(f"Transfer Send Tx Response: {api_response}")
-        return api_response, None
+        return tx_info, api_response, None
 
     @process_api_key_and_nonce
     async def create_public_pool(
@@ -686,7 +687,7 @@ class SignerClient:
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_CREATE_PUBLIC_POOL, tx_info=tx_info)
         logging.debug(f"Create Public Pool Send Tx Response: {api_response}")
-        return api_response, None
+        return tx_info, api_response, None
 
     @process_api_key_and_nonce
     async def update_public_pool(
@@ -701,7 +702,7 @@ class SignerClient:
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_UPDATE_PUBLIC_POOL, tx_info=tx_info)
         logging.debug(f"Update Public Pool Send Tx Response: {api_response}")
-        return api_response, None
+        return tx_info, api_response, None
 
     @process_api_key_and_nonce
     async def mint_shares(self, public_pool_index, share_amount, nonce=-1, api_key_index=-1):
@@ -712,7 +713,7 @@ class SignerClient:
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_MINT_SHARES, tx_info=tx_info)
         logging.debug(f"Mint Shares Send Tx Response: {api_response}")
-        return api_response, None
+        return tx_info, api_response, None
 
     @process_api_key_and_nonce
     async def burn_shares(self, public_pool_index, share_amount, nonce=-1, api_key_index=-1):
@@ -723,9 +724,9 @@ class SignerClient:
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_BURN_SHARES, tx_info=tx_info)
         logging.debug(f"Burn Shares Send Tx Response: {api_response}")
-        return api_response, None
+        return tx_info, api_response, None
 
-    async def send_tx(self, tx_type: StrictInt, tx_info: str) -> TxHash:
+    async def send_tx(self, tx_type: StrictInt, tx_info: str) -> RespSendTx:
         if tx_info[0] != "{":
             raise Exception(tx_info)
         return await self.tx_api.send_tx(tx_type=tx_type, tx_info=tx_info)
