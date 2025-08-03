@@ -86,6 +86,10 @@ def process_api_key_and_nonce(func):
         if api_key_index == -1 and nonce == -1:
             api_key_index, nonce = self.nonce_manager.next_nonce()
         err = self.switch_api_key(api_key_index)
+        if "nonce" in kwargs:
+            del kwargs["nonce"]
+        if "api_key_index" in kwargs:
+            del kwargs["api_key_index"]
         if err != None:
             raise Exception(f"error switching api key: {err}")
 
