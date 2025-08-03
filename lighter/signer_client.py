@@ -630,7 +630,7 @@ class SignerClient:
     async def create_sub_account(self, nonce=-1):
         tx_info, error = self.sign_create_sub_account(nonce)
         if error is not None:
-            return None, error
+            return None, None, error
         logging.debug(f"Create Sub Account Tx Info: {tx_info}")
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_CREATE_SUB_ACCOUNT, tx_info=tx_info)
@@ -641,7 +641,7 @@ class SignerClient:
     async def cancel_all_orders(self, time_in_force, time, nonce=-1, api_key_index=-1):
         tx_info, error = self.sign_cancel_all_orders(time_in_force, time, nonce)
         if error is not None:
-            return None, error
+            return None, None, error
         logging.debug(f"Cancel All Orders Tx Info: {tx_info}")
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_CANCEL_ALL_ORDERS, tx_info=tx_info)
@@ -654,7 +654,7 @@ class SignerClient:
     ):
         tx_info, error = self.sign_modify_order(market_index, order_index, base_amount, price, trigger_price, nonce)
         if error is not None:
-            return None, error
+            return None, None, error
         logging.debug(f"Modify Order Tx Info: {tx_info}")
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_MODIFY_ORDER, tx_info=tx_info)
@@ -667,7 +667,7 @@ class SignerClient:
 
         tx_info, error = self.sign_transfer(to_account_index, usdc_amount, nonce)
         if error is not None:
-            return None, error
+            return None, None, error
         logging.debug(f"Transfer Tx Info: {tx_info}")
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_TRANSFER, tx_info=tx_info)
@@ -682,7 +682,7 @@ class SignerClient:
             operator_fee, initial_total_shares, min_operator_share_rate, nonce
         )
         if error is not None:
-            return None, error
+            return None, None, error
         logging.debug(f"Create Public Pool Tx Info: {tx_info}")
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_CREATE_PUBLIC_POOL, tx_info=tx_info)
@@ -697,7 +697,7 @@ class SignerClient:
             public_pool_index, status, operator_fee, min_operator_share_rate, nonce
         )
         if error is not None:
-            return None, error
+            return None, None, error
         logging.debug(f"Update Public Pool Tx Info: {tx_info}")
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_UPDATE_PUBLIC_POOL, tx_info=tx_info)
@@ -708,7 +708,7 @@ class SignerClient:
     async def mint_shares(self, public_pool_index, share_amount, nonce=-1, api_key_index=-1):
         tx_info, error = self.sign_mint_shares(public_pool_index, share_amount, nonce)
         if error is not None:
-            return None, error
+            return None, None, error
         logging.debug(f"Mint Shares Tx Info: {tx_info}")
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_MINT_SHARES, tx_info=tx_info)
@@ -719,7 +719,7 @@ class SignerClient:
     async def burn_shares(self, public_pool_index, share_amount, nonce=-1, api_key_index=-1):
         tx_info, error = self.sign_burn_shares(public_pool_index, share_amount, nonce)
         if error is not None:
-            return None, error
+            return None, None, error
         logging.debug(f"Burn Shares Tx Info: {tx_info}")
 
         api_response = await self.send_tx(tx_type=self.TX_TYPE_BURN_SHARES, tx_info=tx_info)
