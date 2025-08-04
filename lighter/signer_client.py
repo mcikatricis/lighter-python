@@ -198,7 +198,7 @@ class SignerClient:
 
     def validate_api_private_keys(self, initial_private_key: str, private_keys: Dict[int, str]):
         if len(private_keys) == self.end_api_key_index - self.api_key_index + 1:
-            if private_keys[self.api_key_index] != initial_private_key:
+            if not self.are_keys_equal(private_keys[self.api_key_index], initial_private_key):
                 raise ValidationError("inconsistent private keys")
             return  # this is all we need to check in this case
         if len(private_keys) != self.end_api_key_index - self.api_key_index:
@@ -733,3 +733,12 @@ class SignerClient:
 
     async def close(self):
         await self.api_client.close()
+
+    @staticmethod
+    def are_keys_equal(key1, key2) -> bool:
+        start_index1, start_index2 = 0, 0
+        if key1.startswith("0x"):
+            start_index1 = 2
+        if key2.startswith("0x"):
+            start_index2 = 2
+        return key1[start_index1:] == key2[start_index2:]
