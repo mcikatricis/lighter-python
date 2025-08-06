@@ -442,7 +442,7 @@ class SignerClient:
         error = result.err.decode("utf-8") if result.err else None
 
         if error:
-            return tx_info, error
+            return tx_info_str, error
         
         # fetch message to sign
         tx_info = json.loads(tx_info_str)
