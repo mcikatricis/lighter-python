@@ -128,6 +128,7 @@ class SignerClient:
     TX_TYPE_MODIFY_ORDER = 17
     TX_TYPE_MINT_SHARES = 18
     TX_TYPE_BURN_SHARES = 19
+    TX_TYPE_UPDATE_LEVERAGE = 20
 
     ORDER_TYPE_LIMIT = 0
     ORDER_TYPE_MARKET = 1
@@ -150,6 +151,9 @@ class SignerClient:
     DEFAULT_IOC_EXPIRY = 0
     DEFAULT_10_MIN_AUTH_EXPIRY = -1
     MINUTE = 60
+
+    CROSS_MARGIN_MODE  = 0
+    ISOLATED_MARGIN_MODE = 1
 
     def __init__(
         self,
@@ -422,20 +426,35 @@ class SignerClient:
 
         return tx_info, error
 
-    def sign_transfer(self, to_account_index, usdc_amount, nonce=-1):
+    def sign_transfer(self, eth_private_key, to_account_index, usdc_amount, fee, memo, nonce=-1):
         self.signer.SignTransfer.argtypes = [
             ctypes.c_longlong,
             ctypes.c_longlong,
             ctypes.c_longlong,
+            ctypes.c_char_p,
+            ctypes.c_longlong,
         ]
         self.signer.SignTransfer.restype = StrOrErr
 
-        result = self.signer.SignTransfer(to_account_index, usdc_amount, nonce)
+        result = self.signer.SignTransfer(to_account_index, usdc_amount, fee, ctypes.c_char_p(memo.encode("utf-8")), nonce)
 
-        tx_info = result.str.decode("utf-8") if result.str else None
+        tx_info_str = result.str.decode("utf-8") if result.str else None
         error = result.err.decode("utf-8") if result.err else None
 
-        return tx_info, error
+        if error:
+            return tx_info, error
+        
+        # fetch message to sign
+        tx_info = json.loads(tx_info_str)
+        msg_to_sign = tx_info["MessageToSign"]
+        del tx_info["MessageToSign"]
+
+        # sign the message
+        acct = Account.from_key(eth_private_key)
+        message = encode_defunct(text=msg_to_sign)
+        signature = acct.sign_message(message)
+        tx_info["L1Sig"] = signature.signature.to_0x_hex()
+        return json.dumps(tx_info), None
 
     def sign_create_public_pool(self, operator_fee, initial_total_shares, min_operator_share_rate, nonce=-1):
         self.signer.SignCreatePublicPool.argtypes = [
@@ -502,19 +521,18 @@ class SignerClient:
 
         return tx_info, error
 
-    def sign_update_leverage(self, market_index, leverage, nonce=-1):
+    def sign_update_leverage(self, market_index, fraction, margin_mode, nonce=-1):
         self.signer.SignUpdateLeverage.argtypes = [
+            ctypes.c_int,
             ctypes.c_int,
             ctypes.c_int,
             ctypes.c_longlong,
         ]
         self.signer.SignUpdateLeverage.restype = StrOrErr
-
-        result = self.signer.SignUpdateLeverage(market_index, leverage, nonce)
+        result = self.signer.SignUpdateLeverage(market_index, fraction, margin_mode, nonce)
 
         tx_info = result.str.decode("utf-8") if result.str else None
         error = result.err.decode("utf-8") if result.err else None
-
         return tx_info, error
 
     def create_auth_token_with_expiry(self, deadline: int = DEFAULT_10_MIN_AUTH_EXPIRY):
@@ -522,12 +540,10 @@ class SignerClient:
             deadline = int(time.time() + 10 * SignerClient.MINUTE)
         self.signer.CreateAuthToken.argtypes = [ctypes.c_longlong]
         self.signer.CreateAuthToken.restype = StrOrErr
-
         result = self.signer.CreateAuthToken(deadline)
 
         auth = result.str.decode("utf-8") if result.str else None
         error = result.err.decode("utf-8") if result.err else None
-
         return auth, error
 
     async def change_api_key(self, eth_private_key: str, new_pubkey: str, nonce=-1):
@@ -662,10 +678,10 @@ class SignerClient:
         return tx_info, api_response, None
 
     @process_api_key_and_nonce
-    async def transfer(self, to_account_index, usdc_amount, nonce=-1, api_key_index=-1):
+    async def transfer(self, eth_private_key: str, to_account_index, usdc_amount, fee, memo, nonce=-1, api_key_index=-1):
         usdc_amount = int(usdc_amount * self.USDC_TICKER_SCALE)
 
-        tx_info, error = self.sign_transfer(to_account_index, usdc_amount, nonce)
+        tx_info, error = self.sign_transfer(eth_private_key, to_account_index, usdc_amount, fee, memo, nonce)
         if error is not None:
             return None, None, error
         logging.debug(f"Transfer Tx Info: {tx_info}")
@@ -725,6 +741,20 @@ class SignerClient:
         api_response = await self.send_tx(tx_type=self.TX_TYPE_BURN_SHARES, tx_info=tx_info)
         logging.debug(f"Burn Shares Send Tx Response: {api_response}")
         return tx_info, api_response, None
+    
+    @process_api_key_and_nonce
+    async def update_leverage(self, market_index, margin_mode, leverage, nonce=-1, api_key_index=-1):
+        imf = int(10_000 / leverage)
+        tx_info, error = self.sign_update_leverage(market_index, imf, margin_mode, nonce)
+
+        if error is not None:
+            return None, None, error
+        logging.debug(f"Update Leverage Tx Info: {tx_info}")
+
+        api_response = await self.send_tx(tx_type=self.TX_TYPE_UPDATE_LEVERAGE, tx_info=tx_info)
+        logging.debug(f"Update Leverage Tx Response: {api_response}")
+        return tx_info, api_response, None
+
 
     async def send_tx(self, tx_type: StrictInt, tx_info: str) -> RespSendTx:
         if tx_info[0] != "{":
