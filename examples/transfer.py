@@ -28,18 +28,17 @@ async def main():
     if err is not None:
         print(f"CheckClient error: {err}")
         return
-    # TODO: fix
-    # memo = "transfer fee".ljust(32, "_")
-    # transfer_tx, response, err = await client.transfer(
-    #     ETH_PRIVATE_KEY,
-    #     usdc_amount=10*10**6,
-    #     to_account_index=TO_ACCOUNT_INDEX,
-    #     fee=fee_info.transfer_fee_usdc,
-    #     memo=memo,
-    # )
-    # if err != None:
-    #    raise Exception(f"error transferring {err}")
-    # print(transfer_tx, response)
+    memo = "a"*32
+    transfer_tx, response, err = await client.transfer(
+        ETH_PRIVATE_KEY,
+        usdc_amount=10*10**6,
+        to_account_index=TO_ACCOUNT_INDEX,
+        fee=fee_info.transfer_fee_usdc,
+        memo=memo,
+    )
+    if err != None:
+       raise Exception(f"error transferring {err}")
+    print(transfer_tx, response)
 
     lev_tx, response, err = await client.update_leverage(4, client.CROSS_MARGIN_MODE, 3)
     print(lev_tx, response, err)

@@ -435,7 +435,6 @@ class SignerClient:
             ctypes.c_longlong,
         ]
         self.signer.SignTransfer.restype = StrOrErr
-
         result = self.signer.SignTransfer(to_account_index, usdc_amount, fee, ctypes.c_char_p(memo.encode("utf-8")), nonce)
 
         tx_info_str = result.str.decode("utf-8") if result.str else None
