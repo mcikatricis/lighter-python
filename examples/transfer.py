@@ -31,7 +31,7 @@ async def main():
     memo = "a"*32
     transfer_tx, response, err = await client.transfer(
         ETH_PRIVATE_KEY,
-        usdc_amount=10*10**6,
+        usdc_amount=100,  # decimals are added by sdk
         to_account_index=TO_ACCOUNT_INDEX,
         fee=fee_info.transfer_fee_usdc,
         memo=memo,
