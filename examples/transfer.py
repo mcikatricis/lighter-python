@@ -28,7 +28,7 @@ async def main():
     if err is not None:
         print(f"CheckClient error: {err}")
         return
-    memo = "a"*32
+    memo = "a"*32  # memo is a user message and it has to be exactly 32 bytes long
     transfer_tx, response, err = await client.transfer(
         ETH_PRIVATE_KEY,
         usdc_amount=100,  # decimals are added by sdk
