@@ -190,6 +190,7 @@ class SignerClient:
         self.signer = _initialize_signer()
         self.api_client = lighter.ApiClient(configuration=Configuration(host=url))
         self.tx_api = lighter.TransactionApi(self.api_client)
+        self.order_api = lighter.OrderApi(self.api_client)
         self.nonce_manager = nonce_manager.nonce_manager_factory(
             nonce_manager_type=nonce_management_type,
             account_index=account_index,
@@ -610,6 +611,82 @@ class SignerClient:
             base_amount,
             avg_execution_price,
             is_ask,
+            order_type=self.ORDER_TYPE_MARKET,
+            time_in_force=self.ORDER_TIME_IN_FORCE_IMMEDIATE_OR_CANCEL,
+            order_expiry=self.DEFAULT_IOC_EXPIRY,
+            reduce_only=reduce_only,
+            nonce=nonce,
+            api_key_index=api_key_index,
+        )
+
+    # will only do the amount such that the slippage is limited to the value provided
+    async def create_market_order_limited_slippage(
+        self,
+        market_index,
+        client_order_index,
+        base_amount,
+        max_slippage,
+        is_ask,
+        reduce_only: bool = False,
+        nonce=-1,
+        api_key_index=-1,
+    ) -> (CreateOrder, TxHash, str):
+        order_book_orders = await self.order_api.order_book_orders(market_index, 1)
+        best_price = int((order_book_orders.bids[0].price if is_ask else order_book_orders.asks[0].price).replace(".", ""))
+        acceptable_execution_price = round(best_price * (1 + max_slippage * (-1 if is_ask else 1)))
+        return await self.create_order(
+            market_index,
+            client_order_index,
+            base_amount,
+            price=acceptable_execution_price,
+            is_ask=is_ask,
+            order_type=self.ORDER_TYPE_MARKET,
+            time_in_force=self.ORDER_TIME_IN_FORCE_IMMEDIATE_OR_CANCEL,
+            order_expiry=self.DEFAULT_IOC_EXPIRY,
+            reduce_only=reduce_only,
+            nonce=nonce,
+            api_key_index=api_key_index,
+        )
+
+    # will only execute the order if it executes with slippage <= max_slippage
+    async def create_market_order_if_slippage(
+        self,
+        market_index,
+        client_order_index,
+        base_amount,
+        max_slippage,
+        is_ask,
+        reduce_only: bool = False,
+        nonce=-1,
+        api_key_index=-1,
+    ) -> (CreateOrder, TxHash, str):
+        order_book_orders = await self.order_api.order_book_orders(market_index, 100)
+        best_price = int((order_book_orders.bids[0].price if is_ask else order_book_orders.asks[0].price).replace(".", ""))
+
+        matched_usd_amount, matched_size = 0, 0
+        for order_book_order in (order_book_orders.bids if is_ask else order_book_orders.asks):
+            if matched_size == base_amount:
+                break
+            curr_order_price = int(order_book_order.price.replace(".", ""))
+            curr_order_size = int(order_book_order.remaining_base_amount.replace(".", ""))
+            to_be_used_order_size = min(base_amount - matched_size, curr_order_size)
+            matched_usd_amount += curr_order_price * to_be_used_order_size
+            matched_size += to_be_used_order_size
+
+        potential_execution_price = matched_usd_amount / matched_size
+        acceptable_execution_price = best_price * (1 + max_slippage * (-1 if is_ask else 1))
+        if (is_ask and potential_execution_price < acceptable_execution_price) or (not is_ask and potential_execution_price > acceptable_execution_price):
+            return None, None, "Excessive slippage"
+
+        if matched_size < base_amount:
+            return None, None, "Cannot be sure slippage will be acceptable due to the high size"
+
+        return await self.create_order(
+            market_index,
+            client_order_index,
+            base_amount,
+            price=round(acceptable_execution_price),
+            is_ask=is_ask,
             order_type=self.ORDER_TYPE_MARKET,
             time_in_force=self.ORDER_TIME_IN_FORCE_IMMEDIATE_OR_CANCEL,
             order_expiry=self.DEFAULT_IOC_EXPIRY,
