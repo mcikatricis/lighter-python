@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_URL = "https://testnet.zklighter.elliot.ai"
 API_KEY_PRIVATE_KEY = "0xed636277f3753b6c0275f7a28c2678a7f3a95655e09deaebec15179b50c5da7f903152e50f594f7b"
 ACCOUNT_INDEX = 65
-API_KEY_INDEX = 2
+API_KEY_INDEX = 3
 
 
 def trim_exception(e: Exception) -> str:
