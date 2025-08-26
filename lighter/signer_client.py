@@ -630,10 +630,14 @@ class SignerClient:
         reduce_only: bool = False,
         nonce=-1,
         api_key_index=-1,
+        ideal_price=None
     ) -> (CreateOrder, TxHash, str):
-        order_book_orders = await self.order_api.order_book_orders(market_index, 1)
-        best_price = int((order_book_orders.bids[0].price if is_ask else order_book_orders.asks[0].price).replace(".", ""))
-        acceptable_execution_price = round(best_price * (1 + max_slippage * (-1 if is_ask else 1)))
+        if ideal_price is None:
+            order_book_orders = await self.order_api.order_book_orders(market_index, 1)
+            logging.debug("Create market order limited slippage is doing an API call to get the current ideal price. You can also provide it yourself to avoid this.")
+            ideal_price = int((order_book_orders.bids[0].price if is_ask else order_book_orders.asks[0].price).replace(".", ""))
+
+        acceptable_execution_price = round(ideal_price * (1 + max_slippage * (-1 if is_ask else 1)))
         return await self.create_order(
             market_index,
             client_order_index,
@@ -659,9 +663,11 @@ class SignerClient:
         reduce_only: bool = False,
         nonce=-1,
         api_key_index=-1,
+        ideal_price=None
     ) -> (CreateOrder, TxHash, str):
         order_book_orders = await self.order_api.order_book_orders(market_index, 100)
-        best_price = int((order_book_orders.bids[0].price if is_ask else order_book_orders.asks[0].price).replace(".", ""))
+        if ideal_price is None:
+            ideal_price = int((order_book_orders.bids[0].price if is_ask else order_book_orders.asks[0].price).replace(".", ""))
 
         matched_usd_amount, matched_size = 0, 0
         for order_book_order in (order_book_orders.bids if is_ask else order_book_orders.asks):
@@ -674,7 +680,7 @@ class SignerClient:
             matched_size += to_be_used_order_size
 
         potential_execution_price = matched_usd_amount / matched_size
-        acceptable_execution_price = best_price * (1 + max_slippage * (-1 if is_ask else 1))
+        acceptable_execution_price = ideal_price * (1 + max_slippage * (-1 if is_ask else 1))
         if (is_ask and potential_execution_price < acceptable_execution_price) or (not is_ask and potential_execution_price > acceptable_execution_price):
             return None, None, "Excessive slippage"
 
